@@ -1,8 +1,9 @@
-
+![Lumi Chatbot](Lumi2.png)  
 # Lumi AI Chatbot
 
-Lumi is an emotionally intelligent AI chatbot designed to provide friendly and empathetic conversations. It integrates Groq's Llama 3.3 70B model and works with a fine-tuned BERT model from Hugging Face to generate responses while maintaining a warm and supportive tone.
-try Lumi here: https://huggingface.co/spaces/Yuki-Chen/Lumi_yourfriend 
+Lumi is an emotionally intelligent AI chatbot designed to provide friendly and empathetic conversations. It integrates Groq's Llama 3.3 70B model and works with a fine-tuned BERT model from Hugging Face to generate responses while maintaining a warm and supportive tone. Whether you're feeling happy, sad, or just need someone to talk to, **Lumi is here for you**. 
+
+Try Lumi here: https://huggingface.co/spaces/Yuki-Chen/Lumi_yourfriend 
 
 ## Features
 
