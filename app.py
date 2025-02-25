@@ -33,8 +33,9 @@ emotion_classifier = (
     pipeline("text-classification", model=bert_model, tokenizer=bert_tokenizer, device=0)
     if bert_model else None
 )
-llama_tokenizer, llama_model = load_llama_model()
-llama_pipe = pipeline("text-generation", model=llama_model, tokenizer=llama_tokenizer)
+llama_pipe = load_llama_model()
+if llama_pipe is None:
+    st.error("Failed to load Llama model from Groq API.")
 
 # Helper Functions
 def detect_keyword_category(text):
@@ -44,7 +45,6 @@ def detect_keyword_category(text):
                            "how's everything", "how's it going", "how have you been", "what's new"}
     FAREWELL_KEYWORDS = {"bye", "goodbye", "see you", "take care", "later", "farewell",
                          "see you soon", "talk to you later", "peace", "so long"}
-    FALLBACK_KEYWORDS = {"i don't know", "whatever", "hmm", "not sure", "no idea"}
     IDENTITY_PATTERNS = [r"\bwho are you\b", r"\bwho is lumi\b", r"\bwhat is lumi\b", r"\btell me about lumi\b"]
 
     text_lower = text.lower().strip()
@@ -55,8 +55,6 @@ def detect_keyword_category(text):
         return "greeting"
     if any(re.search(rf"\b{re.escape(fare)}\b", text_lower) for fare in FAREWELL_KEYWORDS):
         return "farewell"
-    if any(re.search(rf"\b{re.escape(fall)}\b", text_lower) for fall in FALLBACK_KEYWORDS):
-        return "fallback"
     return None
 
 def get_direct_response(category):
@@ -76,8 +74,6 @@ def get_direct_response(category):
             "Farewell! Hope to chat with you again soon. 😊",
             "Take care! Remember, I'm always here for you. 💙"
         ])
-    elif category == "fallback":
-        return "I'm not entirely sure what you mean. Could you please elaborate?"
     elif category == "identity":
         return (
             "🌟 Hi! I'm Lumi, your AI friend. 🌟\n"
@@ -130,12 +126,13 @@ emotion_prompts = {
 def generate_response(user_input):
     emotions = classify_emotion(user_input, topk=3)
     dominant_emotion = emotions[0]["label"]
+    
     st.session_state.chat_history.append(f"User ({dominant_emotion}): {user_input}")
     st.session_state.chat_history = st.session_state.chat_history[-10:]
 
     emotion_instruction = emotion_prompts.get(dominant_emotion, "Respond naturally.")
     prompt = (
-        "You are an emotionally intelligent chatbot that provides warm and empathetic responses.\n"
+        "You are an emotionally intelligent chatbot that provides warm and empathetic responses in concise way.\n"
         "Always acknowledge the user's feelings and offer thoughtful, caring advice.\n\n"
         f"Emotion-Specific Instruction: {emotion_instruction}\n\n"
         "Conversation History:\n" +
@@ -143,22 +140,12 @@ def generate_response(user_input):
         "Chatbot:"
     )
 
-    with st.spinner("Generating response..."):
-        response = llama_pipe(
-            prompt.strip(),
-            max_new_tokens=200,
-            min_length=80,
-            do_sample=True,
-            temperature=0.78,
-            top_p=0.92,
-            top_k=40,
-            repetition_penalty=1.15,
-            no_repeat_ngram_size=3,
-            num_beams=3
-        )
-
-    generated_text = response[0]['generated_text']
-    chatbot_response = generated_text.split("Chatbot:")[-1].strip() if "Chatbot:" in generated_text else generated_text.strip()
+    with st.spinner("Lumi is thinking..."):
+        try:
+            chatbot_response = llama_pipe(prompt, max_tokens=200, temperature=0.7)
+        except Exception as e:
+            st.error(f"Error generating response: {e}")
+            return "I'm having trouble connecting, but I'm still here for you."
 
     st.session_state.chat_history.append(f"Chatbot: {chatbot_response}")
     st.session_state.chat_history = st.session_state.chat_history[-10:]

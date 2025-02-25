@@ -4,3 +4,5 @@ transformers
 requests
 pytz
 Pillow
+langchain-groq
+langchain
